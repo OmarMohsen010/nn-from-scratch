@@ -4,7 +4,7 @@ Base Layer class and Dense (Fully Connected) Layer implementation
 """
 
 import numpy as np
-
+from activations import get_activation
 
 class Layer:
     """
@@ -43,27 +43,33 @@ class Dense(Layer):
     Performs: Y = XW + b
     """
     
-    def __init__(self, input_size, output_size):
+    def __init__(self, input_size, output_size, activation=None):
         """
         Initialize Dense layer
         
         Args:
             input_size: Number of input features
             output_size: Number of output features (neurons)
+            activation: Activation function name ('relu', 'sigmoid', 'tanh', 'softmax', or None(ely heya nkhleha linear))
         """
-        # Initialize weights with small random values
-        # Xavier/He initialization can be used for better performance
-        self.weights = np.random.randn(input_size, output_size) * 0.1
+    
+        self.weights = np.random.randn(input_size, output_size) * np.sqrt(2.0 / input_size)
         
-        # Initialize biases to zeros
+        
         self.biases = np.zeros((1, output_size))
+        
+        # Store activation function name and get activation class
+        self.activation_name = activation
+        self.activation_fn = get_activation(activation)
         
         # Placeholders for gradients
         self.weights_gradient = None
         self.biases_gradient = None
         
-        # Store input for backward pass
+        # Store intermediate values for backward pass
         self.input = None
+        self.linear_output = None  # Output before activation
+        self.output = None  # Output after activation
     
     def forward(self, input):
         """
@@ -79,9 +85,11 @@ class Dense(Layer):
         self.input = input
         
         # Compute output: Y = XW + b
-        output = np.dot(input, self.weights) + self.biases
+        self.linear_output = np.dot(input, self.weights) + self.biases
         
-        return output
+        self.output = self.activation_fn.forward(self.linear_output)
+
+        return self.output
     
     def backward(self, output_gradient):
         """
@@ -92,6 +100,8 @@ class Dense(Layer):
         - ∂L/∂W = X^T · ∂L/∂Y (to update weights)
         - ∂L/∂b = sum(∂L/∂Y) (to update biases)
         
+        where Z is the linear output (before activation)
+
         Args:
             output_gradient: Gradient of loss w.r.t. output (∂L/∂Y)
                            Shape: (batch_size, output_size)
@@ -100,15 +110,19 @@ class Dense(Layer):
             input_gradient: Gradient of loss w.r.t. input (∂L/∂X)
                           Shape: (batch_size, input_size)
         """
-        # Compute gradient with respect to weights: ∂L/∂W = X^T · ∂L/∂Y
-        self.weights_gradient = np.dot(self.input.T, output_gradient)
         
-        # Compute gradient with respect to biases: ∂L/∂b = sum(∂L/∂Y, axis=0)
-        # Keep dims for broadcasting
-        self.biases_gradient = np.sum(output_gradient, axis=0, keepdims=True)
+        # ∂L/∂Z = ∂L/∂Y · ∂Y/∂Z (element-wise multiplication)
+        activation_derivative = self.activation_fn.backward(self.linear_output)
+        grad_linear = output_gradient * activation_derivative
         
-        # Compute gradient with respect to input: ∂L/∂X = ∂L/∂Y · W^T
-        input_gradient = np.dot(output_gradient, self.weights.T)
+        # Step 2: Gradient with respect to weights: ∂L/∂W = X^T · ∂L/∂Z
+        self.weights_gradient = np.dot(self.input.T, grad_linear)
+        
+        # Step 3: Gradient with respect to biases: ∂L/∂b = sum(∂L/∂Z, axis=0)
+        self.biases_gradient = np.sum(grad_linear, axis=0, keepdims=True)
+        
+        # Step 4: Gradient with respect to input: ∂L/∂X = ∂L/∂Z · W^T
+        input_gradient = np.dot(grad_linear, self.weights.T)
         
         return input_gradient
     
