@@ -53,7 +53,7 @@ class Dense(Layer):
             activation: Activation function name ('relu', 'sigmoid', 'tanh', 'softmax', or None(ely heya nkhleha linear))
         """
     
-        self.weights = np.random.randn(input_size, output_size) * np.sqrt(2.0 / input_size)
+        self.weights = np.random.randn(input_size, output_size) * 0.01
         
         
         self.biases = np.zeros((1, output_size))
