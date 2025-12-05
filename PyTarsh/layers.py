@@ -96,9 +96,9 @@ class Dense(Layer):
         Backward pass: compute gradients
         
         Given ∂L/∂Y, compute:
-        - ∂L/∂X = ∂L/∂Y · W^T (to pass to previous layer)
-        - ∂L/∂W = X^T · ∂L/∂Y (to update weights)
-        - ∂L/∂b = sum(∂L/∂Y) (to update biases)
+        - ∂L/∂X = ∂L/∂Z · W^T (to pass to previous layer)
+        - ∂L/∂W = X^T · ∂L/∂Z (to update weights)
+        - ∂L/∂b = sum(∂L/∂Z) (to update biases)
         
         where Z is the linear output (before activation)
 
