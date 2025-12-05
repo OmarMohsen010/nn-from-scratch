@@ -4,7 +4,7 @@ Base Layer class and Dense (Fully Connected) Layer implementation
 """
 
 import numpy as np
-from activations import get_activation
+from .activations import get_activation
 
 class Layer:
     """
@@ -53,7 +53,7 @@ class Dense(Layer):
             activation: Activation function name ('relu', 'sigmoid', 'tanh', 'softmax', or None(ely heya nkhleha linear))
         """
     
-        self.weights = np.random.randn(input_size, output_size) * 0.01
+        self.weights = np.random.randn(input_size, output_size)
         
         
         self.biases = np.zeros((1, output_size))

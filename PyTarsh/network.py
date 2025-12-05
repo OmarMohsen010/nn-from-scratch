@@ -4,7 +4,7 @@ Sequential neural network model
 """
 
 import numpy as np
-from losses import mse_loss, mse_gradient
+from .losses import mse_loss, mse_gradient
 
 
 class Sequential:
@@ -88,10 +88,10 @@ class Sequential:
         predictions = self.forward(X)
         
         # Compute loss
-        loss = loss_fn(Y, predictions)
+        loss = loss_fn(predictions, Y)
         
         # Compute loss gradient
-        loss_grad = loss_grad_fn(Y, predictions)
+        loss_grad = loss_grad_fn(predictions, Y)
         
         # Backward pass
         self.backward(loss_grad)
@@ -171,22 +171,9 @@ class Sequential:
         predictions = self.forward(X)
         
         # Compute loss
-        loss = loss_fn(Y, predictions)
+        loss = loss_fn(predictions, Y)
         
         return loss
-    
-    def get_trainable_layers(self):
-        """
-        Get list of layers with trainable parameters
-        
-        Returns:
-            List of layers that have weights and biases
-        """
-        trainable = []
-        for layer in self.layers:
-            if hasattr(layer, 'weights') and hasattr(layer, 'biases'):
-                trainable.append(layer)
-        return trainable
     
     def summary(self):
         """
@@ -226,3 +213,16 @@ class Sequential:
         
         print(f"Total Parameters: {total_params}")
         print("=" * 70)
+    
+    def binary_classify(self, predictions, threshold=0.5):
+        """
+        Convert probabilities to binary class predictions
+    
+        Args:
+        predictions: Array of probabilities
+        threshold: Decision threshold (default: 0.5)
+    
+        Returns:
+        Binary predictions (0 or 1)
+        """
+        return (predictions > threshold).astype(float)
