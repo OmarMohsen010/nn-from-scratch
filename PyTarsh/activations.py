@@ -148,17 +148,22 @@ class Softmax(Activation):
     @staticmethod
     def backward(x):
         """
-        Compute softmax derivative (simplified)
+        Compute softmax derivative (full Jacobian approach)
+    
+        For softmax output s = softmax(x), the Jacobian is:
+        ∂s_i/∂x_j = s_i * (δ_ij - s_j)
+        where δ_ij is the Kronecker delta (1 if i==j, 0 otherwise)
+    
+         Args:
+        x: Input array (before activation), shape (batch_size, num_classes)
         
-        Args:
-            x: Input array (before activation)
-            
         Returns:
-            Derivative (simplified for use with cross-entropy loss)
+        Derivative for element-wise multiplication with upstream gradient
         """
+        s = Softmax.forward(x)
         # Simplified derivative - 3shan full Jacobian is complex
         # This works well when combined with cross-entropy loss
-        return np.ones_like(x)
+        return s * (1.0 - s)
 
 
 class Linear(Activation):
