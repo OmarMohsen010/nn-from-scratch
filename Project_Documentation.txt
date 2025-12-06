@@ -1,0 +1,282 @@
+PyTarsh Neural Network Library
+
+
+Overview
+
+PyTarsh is a lightweight neural-network library built from scratch using NumPy.
+It implements the essential components needed to construct, train, and evaluate feed-forward neural networks.
+
+
+The library includes:
+
+Fully-connected layers
+Activation functions
+Loss functions
+Optimizers (SGD)
+A Sequential model class
+Utility functions such as prediction, evaluation, and summaries
+
+
+Library Structure
+
+pytarsh/
+│
+├── activations.py     # Activation functions
+├── layers.py          # Dense layer implementation
+├── losses.py          # Loss functions (MSE)
+├── optimizers.py      # SGD Optimizer
+├── network.py         # Sequential model logic
+└── __init__.py        # Package exports
+
+------------------------------------------------------------------
+1. Activation Functions
+
+All activation classes inherit from a base class Activation,
+and implement:
+
+forward(x) → activation output
+
+backward(x) → derivative w.r.t input
+
+Available Activations
+**ReLU**
+
+Function: f(x)=max(0,x)
+
+Used for hidden layers
+
+Efficient & prevents vanishing gradient
+
+Derivative: 1 if x>0 else 0
+
+**Sigmoid**
+
+Function: f(x)=1/(1+e^-x)
+
+Best for binary classification
+
+Derivative: sigmoid(x)*(1−sigmoid(x))
+
+**Tanh**
+
+Output between -1 and 1
+
+Zero-centered → better gradient flow
+
+Derivative: 1 − tanh(x)^2
+
+**Softmax**
+
+Converts logits → probability distribution
+
+Used for multi-class classification
+
+Stable implementation using:
+exp(x - max(x))
+
+**Linear**
+
+Identity activation
+
+Used in regression outputs
+
+Derivative = 1
+
+
+Activation Registry
+
+get_activation(name) returns activation class by name.
+Supported names:[relu, sigmoid, tanh, softmax, linear]
+
+--------------------------------------------------------------------
+2. Layers
+
+Base Class: Layer
+
+Defines methods to be overridden:
+
+forward(input)
+
+backward(output_gradient)
+
+Dense Layer
+
+Fully-connected layer:
+Y = XW + b
+
+Dense(input_size, output_size, activation=None)
+
+Responsibilities:
+
+Stores:
+
+weights
+
+biases
+
+gradients
+
+input & linear output
+
+Supports:
+
+Forward propagation
+
+Backward propagation
+
+Parameter updates
+
+Forward Pass:
+Z = XW + b
+A = activation(Z)
+
+Backward Pass:
+
+Computes:
+
+dW = Xᵀ × dZ
+
+db = Σ(dZ)
+
+dX = dZ × Wᵀ
+
+Parameter Update:
+W -= lr * dW
+b -= lr * db
+
+---------------------------------------------------------------------------
+3. Loss Functions
+
+Mean Squared Error (MSE)
+Loss:
+L = mean((Y_true - Y_pred)^2)
+
+Gradient:
+dL/dY = 2*(Y_pred - Y_true) / N
+
+
+Used mainly for regression tasks.
+
+----------------------------------------------------------------------------
+4. Optimizer: SGD
+
+Stochastic Gradient Descent
+SGD(learning_rate=0.01)
+
+Workflow:
+
+register_layers(layers) → store trainable layers
+
+step() → update all weights/biases
+
+Only updates layers containing update_parameters() (e.g., Dense).
+
+------------------------------------------------------------------------------
+5. Sequential Model
+
+Primary class used to build and train neural networks.
+
+Key Methods
+**add(layer)**
+
+Adds a new layer to the network.
+
+**forward(X)**
+
+Passes data through all layers.
+
+**backward(loss_grad)**
+
+Propagates gradients from output → input.
+
+**predict(X)**
+
+Same as forward, but intended for inference.
+
+**train_step(X, Y, loss_fn, loss_grad, optimizer)**
+
+One training iteration:
+
+forward
+
+compute loss
+
+backward
+
+optimizer step
+
+Returns the loss.
+
+**fit(X, Y, epochs, learning_rate, ...)**
+
+Full training loop.
+
+Parameters:
+
+epochs
+
+learning_rate
+
+loss function
+
+optimizer
+
+print progress every N epochs
+
+Stores loss history.
+
+**evaluate(X, Y)**
+
+Returns loss on test/validation data.
+
+**summary()**
+
+Prints a full architecture summary:
+
+layer type
+
+weight shape
+
+parameters
+
+**binary_classify(predictions, threshold=0.5)**
+
+Converts probabilities → 0 or 1.
+
+----------------------------------------------------------------------------
+6. Example Usage
+
+# Create the model
+model = Sequential()
+
+# Add the first hidden layer with 4 units
+model.add(Dense(2,4,activation="relu"))
+
+# Add the second hidden layer with 2 units
+model.add(Dense(4,2,activation="relu"))
+
+# Add the output layer with only 1 unit
+model.add(Dense(2,1,activation="sigmoid"))
+
+# Create optimizer and train the model
+optimizer = SGD(learning_rate=0.1)
+optimizer.register_layers(model.layers)
+history = model.fit(X, Y, epochs=10000, optimizer=optimizer, print_every=100)
+-----------------------------------------------------------------------------
+
+Conclusion
+
+PyTarsh/PyZart provides a clean and educational implementation of deep-learning fundamentals.
+It is ideal for learning NN internals, debugging, or building small experimental models.
+
+
+
+
+
+
+
+
+
+
+
+
