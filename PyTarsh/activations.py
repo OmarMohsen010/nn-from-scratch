@@ -73,7 +73,10 @@ class Sigmoid(Activation):
         Returns:
             1 / (1 + exp(-x))
         """
-        return 1 / (1 + np.exp(-x))
+        # Clip x to prevent overflow in exp
+        # -500 to 500 is a safe range because e^-500 is effectively 0
+        x_clipped = np.clip(x, -500, 500)
+        return 1 / (1 + np.exp(-x_clipped))
     
     @staticmethod
     def backward(x,grad):
