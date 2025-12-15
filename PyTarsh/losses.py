@@ -17,5 +17,4 @@ def mse_gradient(y_pred, y_true):
         Computes the derivative of MSE with respect to predictions.
         Derivative: (2/N) * (Y_pred - Y_true)
         """
-        samples = len(y_pred)
-        return 2 * (y_pred - y_true) / samples
+        return 2 * (y_pred - y_true) / y_pred.size

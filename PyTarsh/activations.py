@@ -16,7 +16,7 @@ class Activation:
         raise NotImplementedError
     
     @staticmethod
-    def backward(x):
+    def backward(x,grad):
         """Compute derivative of activation function"""
         raise NotImplementedError
 
@@ -42,7 +42,7 @@ class ReLU(Activation):
         return np.maximum(0, x)
     
     @staticmethod
-    def backward(x):
+    def backward(x,grad):
         """
         Compute ReLU derivative
         
@@ -52,7 +52,7 @@ class ReLU(Activation):
         Returns:
             Derivative: 1 where x > 0, else 0
         """
-        return (x > 0).astype(float)
+        return grad*(x > 0).astype(float)
 
 
 class Sigmoid(Activation):
@@ -76,7 +76,7 @@ class Sigmoid(Activation):
         return 1 / (1 + np.exp(-x))
     
     @staticmethod
-    def backward(x):
+    def backward(x,grad):
         """
         Compute sigmoid derivative
         
@@ -86,8 +86,8 @@ class Sigmoid(Activation):
         Returns:
             Derivative: sigmoid(x) * (1 - sigmoid(x))
         """
-        sig = Sigmoid.forward(x)
-        return sig * (1 - sig)
+        s = Sigmoid.forward(x)
+        return grad * (s * (1 - s))
 
 
 class Tanh(Activation):
@@ -111,7 +111,7 @@ class Tanh(Activation):
         return np.tanh(x)
     
     @staticmethod
-    def backward(x):
+    def backward(x,grad):
         """
         Compute tanh derivative
         
@@ -121,7 +121,8 @@ class Tanh(Activation):
         Returns:
             Derivative: 1 - tanh(x)^2
         """
-        return 1 - np.tanh(x) ** 2
+        t = np.tanh(x)
+        return grad * (1 - t ** 2)
 
 
 class Softmax(Activation):
@@ -146,7 +147,7 @@ class Softmax(Activation):
         return exp_values / np.sum(exp_values, axis=1, keepdims=True)
     
     @staticmethod
-    def backward(x):
+    def backward(x,grad):
         """
         Compute softmax derivative (full Jacobian approach)
     
@@ -161,9 +162,15 @@ class Softmax(Activation):
         Derivative for element-wise multiplication with upstream gradient
         """
         s = Softmax.forward(x)
-        # Simplified derivative - 3shan full Jacobian is complex
-        # This works well when combined with cross-entropy loss
-        return s * (1.0 - s)
+        # We need to compute: grad_input = (grad_output - sum(grad_output * s)) * s
+        # This implementation handles the batch dimension correctly
+        
+        # 1. Compute dot product between upstream gradient and softmax output for each sample
+        # Shape: (batch_size, 1)
+        dot = np.sum(grad * s, axis=1, keepdims=True)
+        
+        # 2. Apply formula: (grad - dot) * s
+        return (grad - dot) * s
 
 
 class Linear(Activation):
@@ -187,7 +194,7 @@ class Linear(Activation):
         return x
     
     @staticmethod
-    def backward(x):
+    def backward(x,grad):
         """
         Compute linear derivative
         
@@ -197,7 +204,7 @@ class Linear(Activation):
         Returns:
             Derivative: 1 (ones with same shape)
         """
-        return np.ones_like(x)
+        return grad
 
 
 # Activation registry for easy lookup

@@ -112,8 +112,7 @@ class Dense(Layer):
         """
         
         # ∂L/∂Z = ∂L/∂Y · ∂Y/∂Z (element-wise multiplication)
-        activation_derivative = self.activation_fn.backward(self.linear_output)
-        grad_linear = output_gradient * activation_derivative
+        grad_linear = self.activation_fn.backward(self.linear_output,output_gradient)
         
         # Step 2: Gradient with respect to weights: ∂L/∂W = X^T · ∂L/∂Z
         self.weights_gradient = np.dot(self.input.T, grad_linear)
