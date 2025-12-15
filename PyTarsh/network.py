@@ -101,79 +101,68 @@ class Sequential:
         
         return loss
     
-    def fit(self, X, Y, epochs, learning_rate=0.01, 
+    def fit(self, X, Y, epochs, batch_size=32, learning_rate=0.01, 
             loss_fn=None, loss_grad_fn=None, 
             optimizer=None, verbose=True, print_every=100):
         """
-        Train the network
-        
-        Args:
-            X: Training input data, shape (batch_size, input_dim)
-            Y: Training target data, shape (batch_size, output_dim)
-            epochs: Number of training epochs
-            learning_rate: Learning rate for optimizer
-            loss_fn: Loss function (default: MSE)
-            loss_grad_fn: Loss gradient function (default: MSE gradient)
-            optimizer: Optimizer object (default: creates new SGD)
-            verbose: Whether to print training progress
-            print_every: Print loss every N epochs
-            
-        Returns:
-            List of loss values for each epoch
+        Train the network using Mini-Batch Stochastic Gradient Descent.
         """
-        # Use MSE as default loss
-        if loss_fn is None:
+        # 1. Set default Loss functions if not provided
+        if loss_fn is None: 
+            # Local import to avoid circular dependency issues
+            from .losses import mse_loss
             loss_fn = mse_loss
-        if loss_grad_fn is None:
+        if loss_grad_fn is None: 
+            from .losses import mse_gradient
             loss_grad_fn = mse_gradient
         
-        # Create optimizer if not provided
+        # 2. Setup Optimizer if not provided
         if optimizer is None:
-            from optimizers import SGD
+            from .optimizers import SGD
             optimizer = SGD(learning_rate=learning_rate)
             optimizer.register_layers(self.layers)
         
-        # Training loop
         self.loss_history = []
+        n_samples = X.shape[0]
         
+        # 3. Training Loop
         for epoch in range(epochs):
-            # Perform one training step
-            loss = self.train_step(X, Y, loss_fn, loss_grad_fn, optimizer)
+            # Shuffle data at the start of every epoch
+            indices = np.arange(n_samples)
+            np.random.shuffle(indices)
+            X_shuffled = X[indices]
+            Y_shuffled = Y[indices]
             
-            # Store loss
-            self.loss_history.append(loss)
+            epoch_loss = 0
+            
+            # Mini-Batch Loop
+            for start_idx in range(0, n_samples, batch_size):
+                end_idx = min(start_idx + batch_size, n_samples)
+                
+                # Slice the batch
+                X_batch = X_shuffled[start_idx:end_idx]
+                Y_batch = Y_shuffled[start_idx:end_idx]
+                
+                # Perform one training step (Forward -> Backward -> Update)
+                batch_loss = self.train_step(X_batch, Y_batch, loss_fn, loss_grad_fn, optimizer)
+                
+                # Accumulate loss (weighted by batch size for accuracy)
+                epoch_loss += batch_loss * (end_idx - start_idx)
+            
+            # Calculate average loss for the entire epoch
+            epoch_loss /= n_samples
+            self.loss_history.append(epoch_loss)
             
             # Print progress
-            if verbose and (epoch + 1) % print_every == 0:
-                print(f"Epoch {epoch + 1}/{epochs}, Loss: {loss:.6f}")
+            if verbose: 
+                # Print strictly if it matches print_every OR if it's the very first/last epoch
+                if (epoch + 1) % print_every == 0 or epoch == 0 or epoch == epochs - 1:
+                    print(f"Epoch {epoch + 1}/{epochs}, Loss: {epoch_loss:.6f}")
         
         if verbose:
             print(f"Training completed! Final Loss: {self.loss_history[-1]:.6f}")
         
         return self.loss_history
-    
-    def evaluate(self, X, Y, loss_fn=None):
-        """
-        Evaluate the network on test data
-        
-        Args:
-            X: Test input data
-            Y: Test target data
-            loss_fn: Loss function (default: MSE)
-            
-        Returns:
-            Loss value on test data
-        """
-        if loss_fn is None:
-            loss_fn = mse_loss
-        
-        # Forward pass
-        predictions = self.forward(X)
-        
-        # Compute loss
-        loss = loss_fn(predictions, Y)
-        
-        return loss
     
     def summary(self):
         """
